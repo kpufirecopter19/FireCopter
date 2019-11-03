@@ -24,29 +24,39 @@ public class OculusTouchInput_Helicopter : MonoBehaviour
     private GameObject Camera;
 
     private Vector3 lCtrl;
-    private Vector3 rCtrl;
+    private Quaternion rCtrl;
 
     private float prevAlt;
     private float currAlt;
     private float altDelta;
 
+    private Quaternion prevAngle;
+    private Quaternion currAngle;
+    private Quaternion angleDelta;
+
     // Start is called before the first frame update
     void Start()
     {
         altDelta = 0;
+        angleDelta = Quaternion.Euler(new Vector3(0, 0, 0));
+
         helicopter = GameObject.Find("Helicopter") ;
         Camera = GameObject.Find("[CameraRig]");
 
         lCtrl = pose.GetLocalPosition(leftHand);
-        rCtrl = pose.GetLocalPosition(rightHand);
+        rCtrl = pose.GetLocalRotation(rightHand);
         currAlt = lCtrl.y;
         prevAlt = currAlt;
+
+        currAngle = rCtrl;
+        prevAngle = currAngle;
     }
 
     // Update is called once per frame
     void Update()
     {
         currAlt = pose.GetLocalPosition(leftHand).y;
+        currAngle = pose.GetLocalRotation(rightHand);
 
         // 상하 고도 조절 레버
         if (stick.GetActive(leftHand))
@@ -61,10 +71,18 @@ public class OculusTouchInput_Helicopter : MonoBehaviour
         // 전후좌우 조절 레버
         if (gripbutton.GetState(rightHand))
         {
+            //고정된 Y축을 기준으로 회전량을 계산한다.
+            Quaternion prevAngleMin = prevAngle;
+            prevAngleMin.x = -prevAngle.x;
+            prevAngleMin.y = -prevAngle.y;
+            prevAngleMin.z = -prevAngle.z;
+            angleDelta *= (currAngle * prevAngleMin);
 
+            //angleDelta = Quaternion.Euler(new Vector3(angleDelta.x + currAngle.x - prevAngle.x, 0, angleDelta.z + currAngle.z - prevAngle.z));
         }
-
-        helicopter.transform.Translate(new Vector3(0, altDelta, 0));
+        helicopter.transform.Rotate(-angleDelta.z/5,0,angleDelta.x/5);
+        helicopter.transform.Translate(new Vector3((angleDelta.x)/Mathf.PI/5, altDelta, -(angleDelta.z)/Mathf.PI/5));
         prevAlt = currAlt;
+        prevAngle = currAngle;
     }
 }
