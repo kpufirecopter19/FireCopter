@@ -17,6 +17,7 @@ public class OculusTouchInput : MonoBehaviour
     public SteamVR_Action_Boolean gripbutton = SteamVR_Actions.default_GripButton;
     public SteamVR_Action_Boolean ybbutton = SteamVR_Actions.default_YBButton;
     public SteamVR_Action_Boolean xabutton = SteamVR_Actions.default_XAButton;
+    public SteamVR_Action_Boolean start = SteamVR_Actions.default_StartButton;
 
     // Start is called before the first frame update
     public float distance = 0.1f;
@@ -68,8 +69,15 @@ public class OculusTouchInput : MonoBehaviour
         if(stick.GetActive(leftHand))
         {
             Vector2 pos = stick.GetAxis(leftHand);
-            Debug.LogFormat("Stick Position = {0}", pos);
+            //Debug.LogFormat("Stick Position = {0}", pos);
             cameraPos.Translate(new Vector3(pos.x, 0, pos.y) * distance * Time.deltaTime, Space.Self);
+        }
+        if (start.GetStateDown(leftHand))
+        {
+            // 커맨더 모드에서 헬기 오브젝트 가리키고 Start 버튼 누를 시, 해당 오브젝트 조종사 모드로 전환
+            // 조종사 모드에서 Start 버튼 누를 시, 커맨더 모드로 귀환
+            // 헬기를 가리키고 있는지에 대한 Raycast hit 판정 필요.
+            Debug.Log("Perspective Mode Changed");
         }
 
         // 양쪽 트리거 클릭 시 오브젝트의 확대/축소,회전
