@@ -15,12 +15,15 @@ public class MoveObj : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-  
 
     }
     void MoveTo(float x, float y, float z)
     {
         Vector3 t = transform.position+ new Vector3(x,y,z);
         transform.position = Vector3.MoveTowards(transform.position, t, smooth * Time.deltaTime);
+    }
+    public void Rotate()
+    {
+        transform.Rotate(0, 10.0f, 0);
     }
 }

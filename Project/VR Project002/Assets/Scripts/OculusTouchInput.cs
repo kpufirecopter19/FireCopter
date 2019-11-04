@@ -22,12 +22,11 @@ public class OculusTouchInput : MonoBehaviour
     // Start is called before the first frame update
     public float distance = 0.1f;
 
-    private Transform tr;
-    private Transform tr_lc;//왼쪽 컨트롤러
-
     private Transform cameraPos;
     private Vector3 currLeftctrl;
     private Vector3 currRightctrl;
+    private Transform lCtrl;
+    private Transform rCtrl;
 
     private Vector3 prevLeftctrl;
     private Vector3 prevRightctrl;
@@ -40,8 +39,11 @@ public class OculusTouchInput : MonoBehaviour
 
     public GameObject obj;
 
-    private bool keyDown;
+    private Transform tr;
+    private RaycastHit hit;
 
+    private GameObject hitObj;
+    private Vector3 deltaVec;
 
     void Start()
     {
@@ -56,12 +58,14 @@ public class OculusTouchInput : MonoBehaviour
 
         currDegree = getSlope(currLeftctrl, currRightctrl);
         prevDegree = currDegree;
-        keyDown = false;
+
+        hitObj = null;
     }
 
     // Update is called once per frame
     void Update()
     {
+        currLeftctrl = pose.GetLocalPosition(leftHand);
         currDistance = Vector3.Distance(pose.GetLocalPosition(leftHand), pose.GetLocalPosition(rightHand));
         currDegree = getSlope(pose.GetLocalPosition(leftHand), pose.GetLocalPosition(rightHand));
 
@@ -80,6 +84,31 @@ public class OculusTouchInput : MonoBehaviour
             Debug.Log("Perspective Mode Changed");
         }
 
+        // 그립버튼 클릭 시 Raycast로 가리키는 오브젝트를 선택. 클릭 중에는 오브젝트 회전
+        // 그립 버튼 클릭에서 뗄 시 가리키는 오브젝트를 선택해제. null로 초기화
+        if (gripbutton.GetStateDown(leftHand))
+        {
+            deltaVec = Vector3.zero;
+            lCtrl = GetComponent<Transform>().Find("Controller (left)");
+            if (Physics.Raycast(lCtrl.position, lCtrl.forward, out hit))
+            {
+                hitObj = hit.collider.gameObject;
+            }
+        }
+        if (gripbutton.GetState(leftHand))
+        {
+            if (hitObj != null)
+            {
+                deltaVec += (currLeftctrl - prevLeftctrl);
+                hitObj.transform.Translate(deltaVec.x, 0, deltaVec.z);
+                //hitObj.transform.Rotate(0, 10, 0);
+            }
+        }
+        if (gripbutton.GetStateUp(leftHand))
+        {
+            hitObj = null;
+        }
+
         // 양쪽 트리거 클릭 시 오브젝트의 확대/축소,회전
         if (trigger.GetState(leftHand) && trigger.GetState(rightHand)) {
             float distanceDelta = currDistance / prevDistance;
@@ -96,6 +125,7 @@ public class OculusTouchInput : MonoBehaviour
 
         prevDegree = currDegree;
         prevDistance = currDistance;
+        prevLeftctrl = currLeftctrl;
     }
 
     float getSlope(Vector3 c1, Vector3 c2)
